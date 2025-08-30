@@ -195,3 +195,103 @@ def merge_data_dict_to_csv(data_dict, save_path="./pre_data/全部特征合并�
     # 保存合并后的大表
     df_merged.to_csv(save_path, index=False, encoding='utf-8-sig')
     print(f"已将所有特征表合并并保存到: {save_path}")
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
+
+def create_boxplot_comparison(data, grade_groups, save_path='../res/boxplot_comparison.png'):
+    """
+    创建更美观高级的箱线图比较，采用seaborn风格，增加分布、均值、样式美化等
+    """
+    # 设置全局风格
+    sns.set_theme(style="whitegrid", font="PingFang HK", rc={
+        "axes.titlesize": 20,
+        "axes.labelsize": 16,
+        "xtick.labelsize": 14,
+        "ytick.labelsize": 14,
+        "legend.fontsize": 14,
+        "axes.titleweight": "bold"
+    })
+    plt.rcParams['axes.unicode_minus'] = False
+
+    grade_names = ['高一', '高二', '高三']
+    colors = ['#2E86AB', '#A23B72', '#F18F01']
+
+    # 准备数据
+    word_data = [grade_groups[grade]['单词数量-DESWC-03'] for grade in grade_names]
+    sent_data = [grade_groups[grade]['句子数量-DESSC-02'] for grade in grade_names]
+
+    # 构造DataFrame用于seaborn
+    import pandas as pd
+    df_word = pd.DataFrame({
+        '年级': np.repeat(grade_names, [len(x) for x in word_data]),
+        '单词数量': np.concatenate(word_data)
+    })
+    df_sent = pd.DataFrame({
+        '年级': np.repeat(grade_names, [len(x) for x in sent_data]),
+        '句子数量': np.concatenate(sent_data)
+    })
+
+    fig, axes = plt.subplots(1, 2, figsize=(18, 8), dpi=120, constrained_layout=True)
+
+    # 单词数量箱线图+小提琴图
+    sns.violinplot(
+        x='年级', y='单词数量', data=df_word, ax=axes[0],
+        inner=None, palette=colors, linewidth=0, alpha=0.18
+    )
+    sns.boxplot(
+        x='年级', y='单词数量', data=df_word, ax=axes[0],
+        width=0.25, palette=colors, boxprops=dict(alpha=0.7)
+    )
+    # 均值点
+    means = df_word.groupby('年级')['单词数量'].mean()
+    axes[0].scatter(range(len(grade_names)), means, color='#E74C3C', s=120, marker='D', edgecolor='white', zorder=10, label='均值')
+    # 美化
+    axes[0].set_title('单词数量年级间分布对比', fontsize=20, fontweight='bold', color='#222')
+    axes[0].set_xlabel('年级', fontsize=16, fontweight='bold')
+    axes[0].set_ylabel('单词数量', fontsize=16, fontweight='bold')
+    axes[0].grid(axis='y', linestyle='--', alpha=0.25)
+    axes[0].set_axisbelow(True)
+    axes[0].spines['top'].set_visible(False)
+    axes[0].spines['right'].set_visible(False)
+
+    # 句子数量箱线图+小提琴图
+    sns.violinplot(
+        x='年级', y='句子数量', data=df_sent, ax=axes[1],
+        inner=None, palette=colors, linewidth=0, alpha=0.18
+    )
+    sns.boxplot(
+        x='年级', y='句子数量', data=df_sent, ax=axes[1],
+        width=0.25, palette=colors, boxprops=dict(alpha=0.7)
+    )
+    # 均值点
+    means = df_sent.groupby('年级')['句子数量'].mean()
+    axes[1].scatter(range(len(grade_names)), means, color='#E74C3C', s=120, marker='D', edgecolor='white', zorder=10, label='均值')
+    # 美化
+    axes[1].set_title('句子数量年级间分布对比', fontsize=20, fontweight='bold', color='#222')
+    axes[1].set_xlabel('年级', fontsize=16, fontweight='bold')
+    axes[1].set_ylabel('句子数量', fontsize=16, fontweight='bold')
+    axes[1].grid(axis='y', linestyle='--', alpha=0.25)
+    axes[1].set_axisbelow(True)
+    axes[1].spines['top'].set_visible(False)
+    axes[1].spines['right'].set_visible(False)
+
+    # 自定义图例
+    legend_elements = [
+        Patch(facecolor='#2E86AB', edgecolor='#2E86AB', label='高一', alpha=0.7),
+        Patch(facecolor='#A23B72', edgecolor='#A23B72', label='高二', alpha=0.7),
+        Patch(facecolor='#F18F01', edgecolor='#F18F01', label='高三', alpha=0.7),
+        Line2D([0], [0], marker='D', color='w', label='均值', markerfacecolor='#E74C3C', markeredgecolor='white', markersize=12)
+    ]
+    axes[0].legend(handles=legend_elements, loc='upper right', frameon=True, fancybox=True, shadow=True)
+    axes[1].legend(handles=legend_elements, loc='upper right', frameon=True, fancybox=True, shadow=True)
+
+    # 去除多余边距
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.show()
+    print(f"箱线图已保存为: {save_path}")
